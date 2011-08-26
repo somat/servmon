@@ -4,21 +4,22 @@ import time
 import smtplib
 
 class Monitoring:
-    def __init__(self, ip, smtpuser, smtppasswd, fromaddr, toaddr):
+    def __init__(self, hosts, smtpuser, smtppasswd, fromaddr, toaddr):
         lifeline = re.compile(r"(\d) received")
-        check = os.popen("ping -q -c2 "+ip,"r")
         print time.ctime()
-
-        while 1:
-            line = check.readline()
-            if not line: break
-            igot = re.findall(lifeline,line)
-            if igot:
-                if int(igot[0]) == 0:
-                    print "\nSending email ..."
-                    subject = "Mesin %s tidak terjangkau" % (ip)
-                    content = "Mesin %s tidak terjangkau" % (ip)
-                    self.sendmail(smtpuser, smtppasswd, fromaddr, toaddr, subject, content)
+        
+        for host in hosts:
+            check = os.popen("ping -q -c2 "+host,"r")
+            while 1:
+                line = check.readline()
+                if not line: break
+                result = re.findall(lifeline,line)
+                if result:
+                    if int(result[0]) == 0:
+                        print "\nSending email ..."
+                        subject = "Mesin %s tidak terjangkau" % (host)
+                        content = "Mesin %s tidak terjangkau" % (host)
+                        self.sendmail(smtpuser, smtppasswd, fromaddr, toaddr, subject, content)
 
     def sendmail(self, username, password, fromaddr, toaddr, subject, content):
         msg = """From: %s
@@ -28,17 +29,17 @@ Subject: %s
 %s
         """ % (fromaddr, toaddr, subject, content)
         
-        server = smtplib.SMTP('smtp.gmail.com:587')
+        server = smtplib.SMTP('smtp.server:port')
         server.starttls()
         server.login(username,password)
         server.sendmail(fromaddr, toaddr, msg)
         server.quit()
 
 if __name__ == "__main__":
-    ip = ""
+    hosts = ["", "", ""]
     smtpuser = ""
     smtppasswd = ""
     fromaddr = ""
     toaddr = ""
-    monitor = Monitoring(ip, smtpuser, smtppasswd, fromaddr, toaddr)
+    monitor = Monitoring(hosts, smtpuser, smtppasswd, fromaddr, toaddr)
 
